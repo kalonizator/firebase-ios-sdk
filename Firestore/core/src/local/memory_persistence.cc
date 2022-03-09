@@ -99,7 +99,7 @@ MemoryBundleCache* MemoryPersistence::bundle_cache() {
   return &bundle_cache_;
 }
 
-MemoryDocumentOverlayCache* MemoryPersistence::document_overlay_cache(
+MemoryDocumentOverlayCache* MemoryPersistence::GetDocumentOverlayCacheForUser(
     const User& user) {
   auto iter = document_overlay_caches_.find(user);
   if (iter == document_overlay_caches_.end()) {

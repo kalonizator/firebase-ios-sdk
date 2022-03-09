@@ -118,10 +118,7 @@ class QueryEngineTest : public ::testing::Test {
         remote_document_cache_(persistence_->remote_document_cache()),
         target_cache_(persistence_->target_cache()),
         index_manager_(absl::make_unique<MemoryIndexManager>()),
-        local_documents_view_(
-            remote_document_cache_,
-            persistence_->GetMutationQueueForUser(User::Unauthenticated()),
-            index_manager_.get()) {
+        local_documents_view_(remote_document_cache_, persistence_->GetMutationQueueForUser(User::Unauthenticated()), persistence_->GetDocumentOverlayCacheForUser(User::Unauthenticated()), index_manager_.get()) {
     query_engine_.SetLocalDocumentsView(&local_documents_view_);
   }
 

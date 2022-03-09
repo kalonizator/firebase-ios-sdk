@@ -81,7 +81,7 @@ class LevelDbPersistence : public Persistence {
 
   LevelDbBundleCache* bundle_cache() override;
 
-  LevelDbDocumentOverlayCache* document_overlay_cache(
+  LevelDbDocumentOverlayCache* GetDocumentOverlayCacheForUser(
       const credentials::User& user) override;
 
   LevelDbMutationQueue* GetMutationQueueForUser(

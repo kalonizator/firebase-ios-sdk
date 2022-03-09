@@ -87,7 +87,7 @@ class MemoryPersistence : public Persistence {
 
   MemoryBundleCache* bundle_cache() override;
 
-  MemoryDocumentOverlayCache* document_overlay_cache(
+  MemoryDocumentOverlayCache* GetDocumentOverlayCacheForUser(
       const credentials::User& user) override;
 
   MemoryRemoteDocumentCache* remote_document_cache() override;

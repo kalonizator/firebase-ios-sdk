@@ -83,6 +83,7 @@ LocalStore::LocalStore(Persistence* persistence,
                        const User& initial_user)
     : persistence_(persistence),
       mutation_queue_(persistence->GetMutationQueueForUser(initial_user)),
+      document_overlay_cache_(persistence->GetDocumentOverlayCacheForUser(initial_user)),
       remote_document_cache_(persistence->remote_document_cache()),
       target_cache_(persistence->target_cache()),
       bundle_cache_(persistence->bundle_cache()),
@@ -90,6 +91,7 @@ LocalStore::LocalStore(Persistence* persistence,
       local_documents_(
           absl::make_unique<LocalDocumentsView>(remote_document_cache_,
                                                 mutation_queue_,
+                                                document_overlay_cache_,
                                                 persistence->index_manager())) {
   persistence->reference_delegate()->AddInMemoryPins(&local_view_references_);
   target_id_generator_ = TargetIdGenerator::TargetCacheTargetIdGenerator(0);
@@ -126,8 +128,7 @@ DocumentMap LocalStore::HandleUserChange(const User& user) {
         mutation_queue_->AllMutationBatches();
 
     // Recreate our LocalDocumentsView using the new MutationQueue.
-    local_documents_ = absl::make_unique<LocalDocumentsView>(
-        remote_document_cache_, mutation_queue_, persistence_->index_manager());
+    local_documents_ = absl::make_unique<LocalDocumentsView>(remote_document_cache_, mutation_queue_, document_overlay_cache_, persistence_->index_manager());
     query_engine_->SetLocalDocumentsView(local_documents_.get());
 
     // Union the old/new changed keys.

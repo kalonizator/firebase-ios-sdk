@@ -115,7 +115,7 @@ class Persistence {
    * extent possible (e.g. in the case of UID switching from sally=>jack=>sally,
    * sally's document overlay cache will be preserved).
    */
-  virtual DocumentOverlayCache* document_overlay_cache(
+  virtual DocumentOverlayCache* GetDocumentOverlayCacheForUser(
       const credentials::User& user) = 0;
 
   /**

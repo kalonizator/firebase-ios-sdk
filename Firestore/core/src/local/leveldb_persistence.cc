@@ -253,7 +253,7 @@ LevelDbBundleCache* LevelDbPersistence::bundle_cache() {
   return bundle_cache_.get();
 }
 
-LevelDbDocumentOverlayCache* LevelDbPersistence::document_overlay_cache(
+LevelDbDocumentOverlayCache* LevelDbPersistence::GetDocumentOverlayCacheForUser(
     const User& user) {
   users_.insert(user.uid());
   current_document_overlay_cache_ =
