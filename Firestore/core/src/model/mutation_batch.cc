@@ -57,28 +57,40 @@ void MutationBatch::ApplyToRemoteDocument(
   }
 }
 
-void MutationBatch::ApplyToLocalDocument(MutableDocument& document) const {
+FieldMask MutationBatch::ApplyToLocalDocument(MutableDocument& document) const {
+  FieldMask mutated_fields;
+  return ApplyToLocalDocument(document, std::move(mutated_fields));
+}
+
+FieldMask MutationBatch::ApplyToLocalDocument(MutableDocument& document, FieldMask&& mutated_fields_init) const {
   // First, apply the base state. This allows us to apply non-idempotent
   // transform against a consistent set of values.
+  absl::optional<FieldMask> mutated_fields(std::move(mutated_fields_init));
   for (const Mutation& mutation : base_mutations_) {
     if (mutation.key() == document.key()) {
-      mutation.ApplyToLocalView(document, local_write_time_);
+      // TODO(dconeybe) Replace absl::nullopt with a FieldMask?
+      auto new_mutated_fields = mutation.ApplyToLocalView(document, std::move(mutated_fields), local_write_time_);
+      mutated_fields.swap(new_mutated_fields);
     }
   }
 
   // Second, apply all user-provided mutations.
   for (const Mutation& mutation : mutations_) {
     if (mutation.key() == document.key()) {
-      mutation.ApplyToLocalView(document, local_write_time_);
+      auto new_mutated_fields = mutation.ApplyToLocalView(document, std::move(mutated_fields), local_write_time_);
+      mutated_fields.swap(new_mutated_fields);
     }
   }
+
+  return std::move(mutated_fields).value();
 }
 
-void MutationBatch::ApplyToLocalDocumentSet(DocumentMap& document_map) const {
+MutationBatch::MutationByDocumentKeyMap MutationBatch::ApplyToLocalDocumentSet(DocumentMap& document_map) const {
   // TODO(mrschmidt): This implementation is O(n^2). If we iterate through the
   // mutations first (as done in `applyToLocalDocument:documentKey:`), we can
   // reduce the complexity to O(n).
 
+  MutationByDocumentKeyMap overlays;
   for (const Mutation& mutation : mutations_) {
     const DocumentKey& key = mutation.key();
 
@@ -88,7 +100,9 @@ void MutationBatch::ApplyToLocalDocumentSet(DocumentMap& document_map) const {
     // TODO(mutabledocuments): This method should take a map of MutableDocuments
     // and we should remove this cast.
     auto& document = const_cast<MutableDocument&>(it->second.get());
-    ApplyToLocalDocument(document);
+    FieldMask mutated_fields = ApplyToLocalDocument(document);
+    Mutation overlay = Mutation::CalculateOverlayMutation(document, mutated_fields);
+    overlays[key] = std::move(overlay);
     if (!document.is_valid_document()) {
       document.ConvertToNoDocument(SnapshotVersion::None());
     }
